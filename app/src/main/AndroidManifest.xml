@@ -3,12 +3,10 @@
     package="net.stechschulte.justaflashlight">
 
     <!-- Allows access to the flashlight -->
-    <permission
-        android:name="android.permission.FLASHLIGHT"
-        android:permissionGroup="android.permission-group.HARDWARE_CONTROLS"
-        android:protectionLevel="normal"
-        android:label="@string/permlab_flashlight"
-        android:description="@string/permdesc_flashlight" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FLASHLIGHT" />
+
+    <uses-feature android:name="android.hardware.camera" />
 
     <application
         android:allowBackup="true"

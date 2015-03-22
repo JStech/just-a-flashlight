@@ -1,50 +1,83 @@
 package net.stechschulte.justaflashlight;
 
 import android.app.Activity;
-import android.hardware.camera2.CaptureRequest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Button;
+import android.view.WindowManager;
+import android.widget.ToggleButton;
 
+import java.io.IOException;
 
-public class Flashlight extends Activity {
+public class Flashlight extends Activity implements SurfaceHolder.Callback {
+
+    private Camera camera;
+    private static final String TAG = "just-a-flashlight";
+    private SurfaceView surfaceView;
+    private SurfaceHolder surfaceHolder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_flashlight);
 
-        Button powerButton = (Button) findViewById(R.id.power);
+        surfaceView = (SurfaceView) this.findViewById(R.id.surfaceview);
+        surfaceHolder = surfaceView.getHolder();
+        surfaceHolder.addCallback(this);
+        surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        int flashMode = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                .getInt("Preference_FlashModeValue", -1);
+        boolean hasFlash = getApplicationContext().getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
 
-        if (flashMode == CaptureRequest.FLASH_MODE_OFF) {
-            powerButton.setText(R.string.poweron);
-        } else if (flashMode == CaptureRequest.FLASH_MODE_TORCH) {
-            powerButton.setText(R.string.poweroff);
+        if (!hasFlash) {
+            AlertDialog alert = new AlertDialog.Builder(Flashlight.this).create();
+            alert.setTitle("Error");
+            alert.setMessage("Your device does not have a flash.");
+            alert.setButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    finish();
+                }
+            });
+            alert.show();
+            return;
         }
 
-        powerButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                Button powerButton = (Button) findViewById(R.id.power);
-                int flashMode = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                        .getInt("Preference_FlashModeValue", -1);
+        camera = Camera.open();
+        if (camera == null) {
+            Log.e(TAG, "can't open camera");
+        }
 
-                if (flashMode == CaptureRequest.FLASH_MODE_OFF) {
-
-                    powerButton.setText(R.string.poweroff);
-                } else if (flashMode == CaptureRequest.FLASH_MODE_TORCH) {
-                    powerButton.setText(R.string.poweron);
-                }
-
-            }
-        });
     }
 
+    public void toggleButtonClick(View view) {
+        Camera.Parameters p;
+
+        Log.v(TAG, "HERE");
+        ToggleButton powerButton = (ToggleButton) findViewById(R.id.power);
+        if (powerButton.isChecked()) {
+            p = camera.getParameters();
+            p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+            camera.setParameters(p);
+            camera.startPreview();
+            Log.v(TAG, "flash_mode_torch");
+        } else {
+            p = camera.getParameters();
+            p.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            camera.setParameters(p);
+            camera.stopPreview();
+            Log.v(TAG, "flash_mode_off");
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -66,5 +99,29 @@ public class Flashlight extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void onDestroy() {
+        super.onDestroy();
+        if (camera != null) {
+            camera.release();
+        }
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        try {
+            camera.setPreviewDisplay(holder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int I, int J, int K) {
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
     }
 }
