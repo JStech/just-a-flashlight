@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Just a flashlight</string>
+    <string name="poweron">On</string>
+    <string name="poweroff">Off</string>
+    <string name="permlab_flashlight">Flashlight</string>
+    <string name="permdesc_flashlight">Turn the flashlight on and off.</string>
+    <string name="action_settings">Settings</string>
+
+</resources>
